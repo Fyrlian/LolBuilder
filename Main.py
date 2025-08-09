@@ -128,7 +128,7 @@ systemPrompt = "Analyze the following screenshot. It might show a League of Lege
 "You must always have in mind ally and enemy champions for these suggestions"\
 "and the response of the build with a comma-separated list of items item1,item2,item3,item4,item5,item6"\
 "The structure for the info must follow this guide line1 : champions, line 2: user champion, line3 : build , line 4: explaining the reasoning ad the approach of the build , line 5 : build2 " \
-", line 6 : explaining the reasoning and the approach the build 2 , line 7 : current league patch"\
+", line 6 : explaining the reasoning and the approach the build 2 , line 7 : current league patch (YOU MUST USE WEB SEARCH FOR THE CURRENT PATCH using league website of the patch notes    )"\
 "Do NOT provide any other information, explanation, or commentary. Your entire response must follow exactly the guide provided"
 
 # -------------- WINDOW --------------
