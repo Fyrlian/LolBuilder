@@ -5,12 +5,12 @@ from xmlrpc import client # filedialog for selecting folders
 import requests # requests library for conections with OLlama
 from PIL import ImageGrab as sc # imports the screenshot function from pillow library
 import os # imports the os library for file operations
-import ollama # imports the Ollama library to send requests to analyze champ select
 from ScreenCapture import ScreenCapture # imports the ScreenCapture file to use the class
 from datetime import datetime # imports the datetime library to get the date of the screenshot
 import threading # imports the threading library to handle concurrent tasks
 from openai import OpenAI # imports the OpenAI library to use the API key
-import base64 # imports the base64 library to encode images
+import base64
+
 # -------------- API KEY --------------
 
 apiKey = os.getenv("OPENAI_API_KEY")
@@ -79,6 +79,8 @@ def analyzeScreenshot():
 
         response = client.responses.create(
             model="gpt-4.1",
+            tools=[{"type": "web_search_preview"}],
+            temperature = 0,
             input=[
                 {
                 "role": "system",
@@ -101,22 +103,33 @@ def analyzeScreenshot():
             ],
         )
 
-        print(response.output_text)        
+        AIResponse = response.output_text
+        print(AIResponse)
+        analyzingTag.config(text=AIResponse) # shows the analyzing label
 
     # start the analysis in the separate thread
     threading.Thread(target=analyzeAI).start() # starts the analysis in a separate thread
 
+
+
 # -------------- CONFIGS --------------
 
-systemPrompt = "Analyze the following screenshot. It might show a League of Legends champion select screen or something else.\
-If the screenshot does NOT show a champion select screen, respond exactly with: " \
-"NO CHAMP SELECT \
-If the screenshot DOES show a champion select screen, respond ONLY with a comma-separated list of champions.\
-- If you see both teams, list them in this exact order:\
-[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5],[enemyChampion1],[enemyChampion2],[enemyChampion3],[enemyChampion4],[enemyChampion5]\
-    - If you see ONLY the allied team, list only these champions as: " \
-    "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5]\
-Do NOT provide any other information, explanation, or commentary. Your entire response must be exactly one line as specified above."
+systemPrompt = "Analyze the following screenshot. It might show a League of Legends champion select screen or something else."\
+"If the screenshot does NOT show a champion select screen, respond exactly with: " \
+"NO CHAMP SELECT" \
+"If the screenshot DOES show a champion select screen, respond ONLY with a comma-separated list of champions."\
+"- If you see both teams, list them in this exact order:"\
+"[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5],[enemyChampion1],[enemyChampion2],[enemyChampion3],[enemyChampion4],[enemyChampion5]"\
+"- If you see ONLY the allied team, list only these champions as: " \
+"[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5]"\
+"After that you must add which champion the player has selected typing user:championSelected"\
+"Now, the most important part, based on the champions you've found you must also recommend the user " \
+"two builds for his game using information from the website LeagueOfGraphs. " \
+"You must always have in mind ally and enemy champions for these suggestions"\
+"and the response of the build with a comma-separated list of items item1,item2,item3,item4,item5,item6"\
+"The structure for the info must follow this guide line1 : champions, line 2: user champion, line3 : build , line 4: explaining the reasoning ad the approach of the build , line 5 : build2 " \
+", line 6 : explaining the reasoning and the approach the build 2 , line 7 : current league patch"\
+"Do NOT provide any other information, explanation, or commentary. Your entire response must follow exactly the guide provided"
 
 # -------------- WINDOW --------------
 
