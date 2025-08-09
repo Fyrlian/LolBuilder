@@ -1,13 +1,30 @@
 import tkinter as tk # tkinter library for GUI
-from tkinter import filedialog # filedialog for selecting folders
+from tkinter import filedialog
+from urllib import response
+from xmlrpc import client # filedialog for selecting folders
 import requests # requests library for conections with OLlama
 from PIL import ImageGrab as sc # imports the screenshot function from pillow library
 import os # imports the os library for file operations
 import ollama # imports the Ollama library to send requests to analyze champ select
+from ScreenCapture import ScreenCapture # imports the ScreenCapture file to use the class
+from datetime import datetime # imports the datetime library to get the date of the screenshot
+import threading # imports the threading library to handle concurrent tasks
+from openai import OpenAI # imports the OpenAI library to use the API key
+import base64 # imports the base64 library to encode images
+# -------------- API KEY --------------
+
+apiKey = os.getenv("OPENAI_API_KEY")
+
+client = OpenAI(api_key=apiKey) # initializes the OpenAI client with the API key
+
 
 # -------------- FUNCTIONS --------------
 
 SAVE_FOLDER_FILE = "save_folder.txt" # file to save the folder path
+
+def encodeImage(imagePath):
+    with open(imagePath, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
 
 # reads the folder where screenshots will be saved and if there is no folder we asign one
 def readSaveFolder():
@@ -29,14 +46,7 @@ saveFolder = readSaveFolder()
 saveRoute = os.path.join(saveFolder, "screenshot.png")
 
 def scAndAnalyze():
-    captureScreenshot()
-    analyzeScreenshot()
-
-# screenshots the league client
-def captureScreenshot():
-    global saveRoute # allows access to saveRoute variable
-    image = sc.grab() # takes the screenshot to analyze
-    image.save(saveRoute) # saves the screenshot
+    ScreenCapture(onComplete=analyzeScreenshot) # we use a callback to analyze the screenshot after capturing
 
 # allows selecting the folder to save images
 def selectSaveFolder():
@@ -50,14 +60,51 @@ def selectSaveFolder():
 
 # analyzes the champions in the screenshot using llava model
 def analyzeScreenshot():
-    response = ollama.chat(
-        model = "llava",
-        messages = [
-            {"role":"user", "content": systemPrompt,"image":saveRoute}
-        ]
-    )
-    
-    print(response.message.content)
+
+    if os.path.exists(saveRoute):
+
+        # obtains last update date on the picture
+        mod_timestamp = os.path.getmtime(saveRoute)
+        mod_date = datetime.fromtimestamp(mod_timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        
+        print(f"Picture analyzed date: {mod_date}")
+
+    # function to analyze the screenshot using AI that will be executed in a separate thread
+    def analyzeAI():
+
+        analyzingTag.config(text="Analyzing...") # shows the analyzing label
+        analyzingTag.pack() # shows the analyzing label
+        
+        base64Image = encodeImage(saveRoute) # encodes the screenshot to base64
+
+        response = client.responses.create(
+            model="gpt-4.1",
+            input=[
+                {
+                "role": "system",
+                "content": [
+                    {
+                    "type": "input_text",
+                    "text": systemPrompt,
+                    }
+                ]
+                },
+                {
+                "role": "user",
+                "content": [
+                    {
+                    "type": "input_image",
+                    "image_url": f"data:image/jpeg;base64,{base64Image}",
+                    }
+                ]
+                }
+            ],
+        )
+
+        print(response.output_text)        
+
+    # start the analysis in the separate thread
+    threading.Thread(target=analyzeAI).start() # starts the analysis in a separate thread
 
 # -------------- CONFIGS --------------
 
@@ -86,6 +133,9 @@ textTitle = tk.Label(rootWindow, text="Lol Builder", font=("Arial", 24)) # main 
 analyzeButton = tk.Button(rootWindow, text="Analyze", command=scAndAnalyze) # button to analyze text
 
 changeFolderButton = tk.Button(rootWindow, text="Change Save Folder", command=selectSaveFolder) # button to change save folder
+
+analyzingTag = tk.Label(rootWindow, text="Analyzing...") # label to show when analyzing
+analyzingTag.pack_forget() # hide the analyzing label initially
 
 # -------------- PLACING COMPONENTS --------------
 

@@ -16,8 +16,9 @@ def readSaveFolder():
 
 # class to handle screen capturing
 class ScreenCapture:
-    def __init__(self):
+    def __init__(self, onComplete = None):
         self.saveFolder = readSaveFolder()
+        self.onComplete = onComplete
 
         self.root = tk.Tk()
         self.root.attributes('-fullscreen', True)
@@ -72,3 +73,5 @@ class ScreenCapture:
 
         # destroys the window
         self.root.destroy()
+        if self.onComplete:
+            self.onComplete()
