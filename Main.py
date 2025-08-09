@@ -4,12 +4,14 @@ from urllib import response
 from xmlrpc import client # filedialog for selecting folders
 import requests # requests library for conections with OLlama
 from PIL import ImageGrab as sc # imports the screenshot function from pillow library
+from PIL import Image, ImageTk
 import os # imports the os library for file operations
 from ScreenCapture import ScreenCapture # imports the ScreenCapture file to use the class
 from datetime import datetime # imports the datetime library to get the date of the screenshot
 import threading # imports the threading library to handle concurrent tasks
 from openai import OpenAI # imports the OpenAI library to use the API key
 import base64
+import io # imports the io library for handling byte data
 
 # -------------- API KEY --------------
 
@@ -72,15 +74,46 @@ def analyzeScreenshot():
     # function to analyze the screenshot using AI that will be executed in a separate thread
     def analyzeAI():
 
+        patchNumber = patchInput.get().strip()
+        if not patchNumber:
+            analyzingTag.config(text="Please enter a patch number.") # shows error if no patch number is entered
+            analyzingTag.pack() # shows the analyzing label
+
+            return
+
         analyzingTag.config(text="Analyzing...") # shows the analyzing label
         analyzingTag.pack() # shows the analyzing label
         
         base64Image = encodeImage(saveRoute) # encodes the screenshot to base64
 
+        systemPrompt = (
+            "Analyze the following screenshot. It might show a League of Legends champion select screen or something else. "
+            "If the screenshot does NOT show a champion select screen, respond exactly with: NO CHAMP SELECT. "
+            "If the screenshot DOES show a champion select screen, respond ONLY with a comma-separated list of champions. "
+            "- If you see both teams, list them in this exact order: "
+            "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5],"
+            "[enemyChampion1],[enemyChampion2],[enemyChampion3],[enemyChampion4],[enemyChampion5]. "
+            "- If you see ONLY the allied team, list only these champions as: "
+            "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5]. "
+            "After that, add which champion the player has selected using: user:championSelected. "
+
+            "Next, you MUST perform the following steps strictly in order: "
+            f"Step 1: Using the exact patch number {patchNumber}, use WEB SEARCH internally to find the best builds for the USER CHAMPION against enemy champions and synergies with ally champions for that current patch. Prioritize items strong against multiple enemies."
+            "Then add the next lines to your response"  
+            "Line 3: list of items of the first build separated by commas "
+            "Line 4: short reasoning and approach for the first build"
+            "Line 5: list of items of the second build  separated by commas"
+            "Line 6: short reasoning and approach for the second build"
+            f"Line 7: The patch number used for this search."
+
+            "The build must be written as a comma-separated list of exactly six items: item1,item2,item3,item4,item5,item6."
+            "You must always show these 7 lines of information and nothing else. Do not tell the user when you searched something."
+        )
+
         response = client.responses.create(
             model="gpt-4o",
-            tools=[{"type": "web_search_preview"}],
-            temperature = 0,
+            tools=[{"type": "web_search"}],
+            temperature=0,
             input=[
                 {
                 "role": "system",
@@ -110,40 +143,28 @@ def analyzeScreenshot():
     # start the analysis in the separate thread
     threading.Thread(target=analyzeAI).start() # starts the analysis in a separate thread
 
+def showImages(response):
+    info = response.splitlines()
+    champions = info[0].split(",") # first line contains the champions divided by commas
+    for champion in champions:
+        image = getChampionImage(champion) # gets the champion image
+        if image:
+            pic = ImageTk.PhotoImage(image) # converts the image to PhotoImage
+            label = tk.Label(frame, image=pic) # creates a label with the image
+            label.image = pic # keeps a reference to the image
+            label.pack(side=tk.LEFT, padx=5, pady=5) # packs the label into the frame
 
-
-# -------------- CONFIGS --------------
-
-systemPrompt = (
-    "Analyze the following screenshot. It might show a League of Legends champion select screen or something else. "
-    "If the screenshot does NOT show a champion select screen, respond exactly with: NO CHAMP SELECT. "
-    "If the screenshot DOES show a champion select screen, respond ONLY with a comma-separated list of champions. "
-    "- If you see both teams, list them in this exact order: "
-    "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5],"
-    "[enemyChampion1],[enemyChampion2],[enemyChampion3],[enemyChampion4],[enemyChampion5]. "
-    "- If you see ONLY the allied team, list only these champions as: "
-    "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5]. "
-    "After that, add which champion the player has selected using: user:championSelected. "
-
-    "Next, you MUST perform the following steps strictly in order: "
-    "Step 1: Use WEB SEARCH to retrieve the CURRENT official League of Legends patch number "
-    "from the official patch notes page at https://www.leagueoflegends.com/en-us/news/tags/patch-notes/. "
-    "Step 2: Using this exact patch number, search online to find the best builds against enemy champions and sinergies with ally champions for that current patch "
-    "If certain items are statistically strong against multiple detected enemy champions, prioritize them. "
-
-    "The build must be written as a comma-separated list of exactly six items: item1,item2,item3,item4,item5,item6. "
-    "The response must follow this exact structure: "
-    "Line 1: champions in the screenshot, "
-    "Line 2: user champion "
-    "Line 3: list of items of the first build "
-    "Line 4: reasoning and approach for the first build"
-    "Line 5: list of items of the second build "
-    "Line 6: reasoning and approach for the second build"
-    "Line 7: current League patch. (using https://www.leagueoflegends.com/en-us/news/tags/patch-notes/ as reference) "
-
-
-    "You must always show these 7 lines of information and nothing else."
-)
+def getChampionImage(championName):
+    url = f"https://ddragon.leagueoflegends.com/cdn/13.20.1/img/champion/{championName}.png" # URL to get the champion image
+    response = requests.get(url) # makes a request to the URL
+    if response.status_code == 200:
+        imageData = response.content # gets the content of the response
+        image = Image.open(io.BytesIO(imageData)) # opens the image
+        return image
+    
+    else:
+        return None # returns None if the request was not successful
+        print(f"Champion image for {championName} not found.") # prints an error message if the champion image was not found
 
 
 # -------------- WINDOW --------------
@@ -151,6 +172,9 @@ systemPrompt = (
 rootWindow = tk.Tk() # create main window of the app
 rootWindow.title("Lol Builder") # title of the main window
 rootWindow.geometry("600x600") # 600 pixels resolution
+
+frame = tk.Frame(rootWindow, bg="lightgray", width=300, height=200) # create a frame to hold the components
+
 
 # -------------- COMPONENTS --------------
 
@@ -163,7 +187,11 @@ analyzeButton = tk.Button(rootWindow, text="Analyze", command=scAndAnalyze) # bu
 changeFolderButton = tk.Button(rootWindow, text="Change Save Folder", command=selectSaveFolder) # button to change save folder
 
 analyzingTag = tk.Label(rootWindow, text="Analyzing...") # label to show when analyzing
+
 analyzingTag.pack_forget() # hide the analyzing label initially
+
+global patchInput
+patchInput = tk.Entry(rootWindow) # input field for the patch number
 
 # -------------- PLACING COMPONENTS --------------
 
@@ -171,6 +199,8 @@ textTitle.pack(pady=20) # add title to window
 changeFolderButton.pack(pady=10) # add change folder button to window
 folderTag.pack(pady=10) # add folder tag to window
 analyzeButton.pack(pady=10) # add analyze button to window
+patchInput.pack(pady=10) # add patch input to window
+frame.pack(padx=10, pady=10)  # place it
 
 
 # -------------- RUN --------------
