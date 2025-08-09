@@ -78,7 +78,7 @@ def analyzeScreenshot():
         base64Image = encodeImage(saveRoute) # encodes the screenshot to base64
 
         response = client.responses.create(
-            model="gpt-4.1",
+            model="gpt-4o",
             tools=[{"type": "web_search_preview"}],
             temperature = 0,
             input=[
@@ -114,22 +114,37 @@ def analyzeScreenshot():
 
 # -------------- CONFIGS --------------
 
-systemPrompt = "Analyze the following screenshot. It might show a League of Legends champion select screen or something else."\
-"If the screenshot does NOT show a champion select screen, respond exactly with: " \
-"NO CHAMP SELECT" \
-"If the screenshot DOES show a champion select screen, respond ONLY with a comma-separated list of champions."\
-"- If you see both teams, list them in this exact order:"\
-"[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5],[enemyChampion1],[enemyChampion2],[enemyChampion3],[enemyChampion4],[enemyChampion5]"\
-"- If you see ONLY the allied team, list only these champions as: " \
-"[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5]"\
-"After that you must add which champion the player has selected typing user:championSelected"\
-"Now, the most important part, based on the champions you've found you must also recommend the user " \
-"two builds for his game using information from the website LeagueOfGraphs. " \
-"You must always have in mind ally and enemy champions for these suggestions"\
-"and the response of the build with a comma-separated list of items item1,item2,item3,item4,item5,item6"\
-"The structure for the info must follow this guide line1 : champions, line 2: user champion, line3 : build , line 4: explaining the reasoning ad the approach of the build , line 5 : build2 " \
-", line 6 : explaining the reasoning and the approach the build 2 , line 7 : current league patch (YOU MUST USE WEB SEARCH FOR THE CURRENT PATCH using league website of the patch notes    )"\
-"Do NOT provide any other information, explanation, or commentary. Your entire response must follow exactly the guide provided"
+systemPrompt = (
+    "Analyze the following screenshot. It might show a League of Legends champion select screen or something else. "
+    "If the screenshot does NOT show a champion select screen, respond exactly with: NO CHAMP SELECT. "
+    "If the screenshot DOES show a champion select screen, respond ONLY with a comma-separated list of champions. "
+    "- If you see both teams, list them in this exact order: "
+    "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5],"
+    "[enemyChampion1],[enemyChampion2],[enemyChampion3],[enemyChampion4],[enemyChampion5]. "
+    "- If you see ONLY the allied team, list only these champions as: "
+    "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5]. "
+    "After that, add which champion the player has selected using: user:championSelected. "
+
+    "Next, you MUST perform the following steps strictly in order: "
+    "Step 1: Use WEB SEARCH to retrieve the CURRENT official League of Legends patch number "
+    "from the official patch notes page at https://www.leagueoflegends.com/en-us/news/tags/patch-notes/. "
+    "Step 2: Using this exact patch number, search online to find the best builds against enemy champions and sinergies with ally champions for that current patch "
+    "If certain items are statistically strong against multiple detected enemy champions, prioritize them. "
+
+    "The build must be written as a comma-separated list of exactly six items: item1,item2,item3,item4,item5,item6. "
+    "The response must follow this exact structure: "
+    "Line 1: champions in the screenshot, "
+    "Line 2: user champion "
+    "Line 3: list of items of the first build "
+    "Line 4: reasoning and approach for the first build"
+    "Line 5: list of items of the second build "
+    "Line 6: reasoning and approach for the second build"
+    "Line 7: current League patch. (using https://www.leagueoflegends.com/en-us/news/tags/patch-notes/ as reference) "
+
+
+    "You must always show these 7 lines of information and nothing else."
+)
+
 
 # -------------- WINDOW --------------
 
