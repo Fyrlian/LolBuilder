@@ -15,18 +15,18 @@ import io # imports the io library for handling byte data
 
 # -------------- API KEY --------------
 
-apiKey = os.getenv("OPENAI_API_KEY")
+apiKey = os.getenv("OPENAI_API_KEY") # user should asign here the api key if not using environment variables
 
 client = OpenAI(api_key=apiKey) # initializes the OpenAI client with the API key
-
 
 # -------------- FUNCTIONS --------------
 
 SAVE_FOLDER_FILE = "save_folder.txt" # file to save the folder path
 
+# encodes an image to base64
 def encodeImage(imagePath):
-    with open(imagePath, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
+    with open(imagePath, "rb") as image_file: # opens the image file in binary mode
+        return base64.b64encode(image_file.read()).decode("utf-8") # returns the image encoded to base64
 
 # reads the folder where screenshots will be saved and if there is no folder we asign one
 def readSaveFolder():
@@ -36,7 +36,7 @@ def readSaveFolder():
             if path and os.path.isdir(path):
                 return path
     defaultFolder = os.path.join(os.path.expanduser("~"), "Pictures") # initial folder for the images
-    writeSaveFolder(defaultFolder)
+    writeSaveFolder(defaultFolder) # sets the default folder
     return defaultFolder
 
 # updates the folder where screenshots will be saved
@@ -44,10 +44,18 @@ def writeSaveFolder(path):
     with open(SAVE_FOLDER_FILE, "w", encoding="utf-8") as f:
         f.write(path)
 
-saveFolder = readSaveFolder()
-saveRoute = os.path.join(saveFolder, "screenshot.png")
+saveFolder = readSaveFolder() # get the folder where screenshots will be saved
+saveRoute = os.path.join(saveFolder, "screenshot.png") # path to save the screenshot
 
+# captures the screen and analyzes the screenshot
 def scAndAnalyze():
+    patchNumber = patchInput.get().strip() # get the patch number from the input
+
+    if not patchNumber: # if no patch number is entered
+        analyzingTag.config(text="Please enter a patch number.",fg="red") # shows error if no patch number is entered
+        analyzingTag.pack() # shows the analyzing label
+
+        return
     ScreenCapture(onComplete=analyzeScreenshot) # we use a callback to analyze the screenshot after capturing
 
 # allows selecting the folder to save images
@@ -74,14 +82,7 @@ def analyzeScreenshot():
     # function to analyze the screenshot using AI that will be executed in a separate thread
     def analyzeAI():
 
-        patchNumber = patchInput.get().strip()
-        if not patchNumber:
-            analyzingTag.config(text="Please enter a patch number.") # shows error if no patch number is entered
-            analyzingTag.pack() # shows the analyzing label
-
-            return
-
-        analyzingTag.config(text="Analyzing...") # shows the analyzing label
+        analyzingTag.config(text="Analyzing...",fg = "black") # shows the analyzing label
         analyzingTag.pack() # shows the analyzing label
         
         base64Image = encodeImage(saveRoute) # encodes the screenshot to base64
@@ -116,6 +117,7 @@ def analyzeScreenshot():
             "Remember you must always show these 7 lines of information and nothing else. Do not tell the user when you searched something. Do not add stuff to your response. Just those lines given the instructions"
         )
 
+        # Send the request to the API
         response = client.responses.create(
             model="gpt-4o",
             tools=[{"type": "web_search"}],
@@ -143,14 +145,19 @@ def analyzeScreenshot():
         )
 
         AIResponse = response.output_text
+
+        if AIResponse.strip() == "NO CHAMP SELECT": # if the AI response is NO CHAMP SELECT
+            analyzingTag.config(text="No champion select detected.", fg="red")
+            return
+
         showImages(AIResponse)
         analyzingTag.config(text=AIResponse) # shows the analyzing label
         analyzeButton.pack_forget() # hides the analyze button
 
-
     # start the analysis in the separate thread
     threading.Thread(target=analyzeAI).start() # starts the analysis in a separate thread
 
+# shows the images of the champions and items in the response
 def showImages(response):
     info = response.splitlines()
     champions = info[0].split(",")  # first line contains champions separated by commas
@@ -177,11 +184,12 @@ def showImages(response):
             label.grid(row=5, column=i, padx=5, pady=5)
 
     hideMainWindow()  # hide the main window components
-    frame.pack(padx=10, pady=10)  # place the frame
-    backButton.pack(pady=10)  # add back button to window
     showTags()  # show the ally and enemy team labels
+    backButton.grid(row=6, column=0, padx=5, pady=5)  # add back button to window
+    rootWindow.geometry("1000x600")  # set window size
+    frame.pack(padx=10, pady=10)  # place the frame
 
-
+# gets the image of a champion
 def getChampionImage(championName):
     patchNumber = patchInput.get().strip() # get the patch number from the input
     firstNumber = int(patchNumber.split(".")[0]) # get the first number of the patch
@@ -200,6 +208,7 @@ def getChampionImage(championName):
         return None # returns None if the request was not successful
         print(f"Champion image for {championName} not found.") # prints an error message if the champion image was not found
 
+# gets the image of an item
 def getItemImage(item):
     patchNumber = patchInput.get().strip() # get the patch number from the input
     firstNumber = int(patchNumber.split(".")[0]) # get the first number of the patch
@@ -218,15 +227,17 @@ def getItemImage(item):
         return None # returns None if the request was not successful
         print(f"Item image for {itemId} not found.") # prints an error message if the item image was not found
 
+# goes back to the main window hiding build and champion images
 def goBack():
+    rootWindow.geometry("400x280") # 600 pixels resolution
     frame.pack_forget()
     changeFolderButton.pack(pady=10) # add change folder button to window
     folderTag.pack(pady=10) # add folder tag to window
     analyzeButton.pack(pady=10) # add analyze button to window
     patchInput.pack(pady=10) # add patch input to window
     analyzingTag.pack_forget() # add analyzing label to window
-    
 
+# hides the main window components
 def hideMainWindow():
     analyzeButton.pack_forget() # hides the analyze button
     analyzingTag.pack_forget() # hides the analyzing label
@@ -234,6 +245,7 @@ def hideMainWindow():
     folderTag.pack_forget() # hides the folder tag
     patchInput.pack_forget() # hides the patch input
 
+# shows the tags for enemy and ally teams
 def showTags():
     enemyTeamTag = tk.Label(frame, text="Enemy team") # label to show when analyzing
     enemyTeamTag.grid(row=2, column=0, padx=5, pady=5)
@@ -247,15 +259,13 @@ def showTags():
     enemyTeamTag.config(fg="red")
     allyTeamTag.config(fg="blue")
 
-
 # -------------- WINDOW --------------
 
 rootWindow = tk.Tk() # create main window of the app
 rootWindow.title("Lol Builder") # title of the main window
-rootWindow.geometry("600x600") # 600 pixels resolution
+rootWindow.geometry("400x280") # 600 pixels resolution
 
 frame = tk.Frame(rootWindow, width=500, height=400) # create a frame to hold the components
-
 
 # -------------- COMPONENTS --------------
 
@@ -271,7 +281,7 @@ analyzingTag = tk.Label(rootWindow, text="Analyzing...") # label to show when an
 
 analyzingTag.pack_forget() # hide the analyzing label initially
 
-backButton = tk.Button(rootWindow, text="Go back", command=goBack) # button to analyze text
+backButton = tk.Button(frame, text="Go back", command=goBack) # button to analyze text
 
 global patchInput
 patchInput = tk.Entry(rootWindow) # input field for the patch number
@@ -283,8 +293,6 @@ changeFolderButton.pack(pady=10) # add change folder button to window
 folderTag.pack(pady=10) # add folder tag to window
 analyzeButton.pack(pady=10) # add analyze button to window
 patchInput.pack(pady=10) # add patch input to window
-
-
 
 # -------------- RUN --------------
 
