@@ -137,26 +137,38 @@ def analyzeScreenshot():
         )
 
         AIResponse = response.output_text
-        print(AIResponse)
+        showImages(AIResponse)
         analyzingTag.config(text=AIResponse) # shows the analyzing label
+
 
     # start the analysis in the separate thread
     threading.Thread(target=analyzeAI).start() # starts the analysis in a separate thread
 
 def showImages(response):
     info = response.splitlines()
-    champions = info[0].split(",") # first line contains the champions divided by commas
-    for champion in champions:
-        image = getChampionImage(champion) # gets the champion image
+    champions = info[0].split(",")  # first line contains champions separated by commas
+    print(champions)
+    for i, champion in enumerate(champions):
+        image = getChampionImage(champion)  # get the champion image
         if image:
-            pic = ImageTk.PhotoImage(image) # converts the image to PhotoImage
-            label = tk.Label(frame, image=pic) # creates a label with the image
-            label.image = pic # keeps a reference to the image
-            label.pack(side=tk.LEFT, padx=5, pady=5) # packs the label into the frame
+            pic = ImageTk.PhotoImage(image)
+            label = tk.Label(frame, image=pic)
+            label.image = pic  # keep a reference to avoid garbage collection
+            # place in grid rows and columns
+            row = i // 5  # row 0 for first 5, row 1 for next 5
+            col = i % 5   # column from 0 to 4
+            label.grid(row=row, column=col, padx=5, pady=5)
+
 
 def getChampionImage(championName):
-    url = f"https://ddragon.leagueoflegends.com/cdn/13.20.1/img/champion/{championName}.png" # URL to get the champion image
+    patchNumber = patchInput.get().strip() # get the patch number from the input
+    firstNumber = int(patchNumber.split(".")[0]) # get the first number of the patch
+    realVersionFirstNumber = firstNumber - 10 # get the real version first number
+    realVersion = str(realVersionFirstNumber) + "." + patchNumber.split(".")[1] + ".1" # gets the real version of the patch
+    championName = championName.replace(" ", "").replace("'","").replace(".", "").replace("Glasc", "").replace("Wukong", "MonkeyKing") # format the champion name
+    url = f"https://ddragon.leagueoflegends.com/cdn/{realVersion}/img/champion/{championName}.png" # URL to get the champion image
     response = requests.get(url) # makes a request to the URL
+    print(url,response.status_code)
     if response.status_code == 200:
         imageData = response.content # gets the content of the response
         image = Image.open(io.BytesIO(imageData)) # opens the image
@@ -173,7 +185,7 @@ rootWindow = tk.Tk() # create main window of the app
 rootWindow.title("Lol Builder") # title of the main window
 rootWindow.geometry("600x600") # 600 pixels resolution
 
-frame = tk.Frame(rootWindow, bg="lightgray", width=300, height=200) # create a frame to hold the components
+frame = tk.Frame(rootWindow, bg="lightgray", width=500, height=400) # create a frame to hold the components
 
 
 # -------------- COMPONENTS --------------
