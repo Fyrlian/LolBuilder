@@ -145,6 +145,7 @@ def analyzeScreenshot():
         AIResponse = response.output_text
         showImages(AIResponse)
         analyzingTag.config(text=AIResponse) # shows the analyzing label
+        analyzeButton.pack_forget() # hides the analyze button
 
 
     # start the analysis in the separate thread
@@ -163,7 +164,9 @@ def showImages(response):
             # place in grid rows and columns
             row = i // 5  # row 0 for first 5, row 1 for next 5
             col = i % 5   # column from 0 to 4
-            label.grid(row=row, column=col, padx=5, pady=5)
+            if row == 1: # making space here for enemy tag
+                row = 2
+            label.grid(row=row+1, column=col, padx=5, pady=5)
     items = info[3].split(",") # 4th line contains the items separated by commas
     for i, item in enumerate(items):
         image = getItemImage(item)  # get the item image
@@ -171,9 +174,13 @@ def showImages(response):
             pic = ImageTk.PhotoImage(image)
             label = tk.Label(frame, image=pic)
             label.image = pic  # keep a reference to avoid garbage collection
-            label.grid(row=2, column=i, padx=5, pady=5)
+            label.grid(row=5, column=i, padx=5, pady=5)
 
+    hideMainWindow()  # hide the main window components
     frame.pack(padx=10, pady=10)  # place the frame
+    backButton.pack(pady=10)  # add back button to window
+    showTags()  # show the ally and enemy team labels
+
 
 def getChampionImage(championName):
     patchNumber = patchInput.get().strip() # get the patch number from the input
@@ -210,13 +217,44 @@ def getItemImage(item):
     else:
         return None # returns None if the request was not successful
         print(f"Item image for {itemId} not found.") # prints an error message if the item image was not found
+
+def goBack():
+    frame.pack_forget()
+    changeFolderButton.pack(pady=10) # add change folder button to window
+    folderTag.pack(pady=10) # add folder tag to window
+    analyzeButton.pack(pady=10) # add analyze button to window
+    patchInput.pack(pady=10) # add patch input to window
+    analyzingTag.pack_forget() # add analyzing label to window
+    
+
+def hideMainWindow():
+    analyzeButton.pack_forget() # hides the analyze button
+    analyzingTag.pack_forget() # hides the analyzing label
+    changeFolderButton.pack_forget() # hides the change folder button
+    folderTag.pack_forget() # hides the folder tag
+    patchInput.pack_forget() # hides the patch input
+
+def showTags():
+    enemyTeamTag = tk.Label(frame, text="Enemy team") # label to show when analyzing
+    enemyTeamTag.grid(row=2, column=0, padx=5, pady=5)
+
+    allyTeamTag = tk.Label(frame, text="Ally team") # label to show when analyzing
+    allyTeamTag.grid(row=0, column=0, padx=5, pady=5)
+
+    itemsTag = tk.Label(frame, text="Optimal build") # label to show when analyzing
+    itemsTag.grid(row=4, column=0, padx=5, pady=5)
+
+    enemyTeamTag.config(fg="red")
+    allyTeamTag.config(fg="blue")
+
+
 # -------------- WINDOW --------------
 
 rootWindow = tk.Tk() # create main window of the app
 rootWindow.title("Lol Builder") # title of the main window
 rootWindow.geometry("600x600") # 600 pixels resolution
 
-frame = tk.Frame(rootWindow, bg="lightgray", width=500, height=400) # create a frame to hold the components
+frame = tk.Frame(rootWindow, width=500, height=400) # create a frame to hold the components
 
 
 # -------------- COMPONENTS --------------
@@ -232,6 +270,8 @@ changeFolderButton = tk.Button(rootWindow, text="Change Save Folder", command=se
 analyzingTag = tk.Label(rootWindow, text="Analyzing...") # label to show when analyzing
 
 analyzingTag.pack_forget() # hide the analyzing label initially
+
+backButton = tk.Button(rootWindow, text="Go back", command=goBack) # button to analyze text
 
 global patchInput
 patchInput = tk.Entry(rootWindow) # input field for the patch number
