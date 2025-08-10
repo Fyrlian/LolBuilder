@@ -86,6 +86,11 @@ def analyzeScreenshot():
         
         base64Image = encodeImage(saveRoute) # encodes the screenshot to base64
 
+        patchNumber = patchInput.get().strip() # get the patch number from the input
+        firstNumber = int(patchNumber.split(".")[0]) # get the first number of the patch
+        realVersionFirstNumber = firstNumber - 10 # get the real version first number
+        realVersion = str(realVersionFirstNumber) + "." + patchNumber.split(".")[1] + ".1" # gets the real version of the patch
+
         systemPrompt = (
             "Analyze the following screenshot. It might show a League of Legends champion select screen or something else. "
             "If the screenshot does NOT show a champion select screen, respond exactly with: NO CHAMP SELECT. "
@@ -96,18 +101,19 @@ def analyzeScreenshot():
             "- If you see ONLY the allied team, list only these champions as: "
             "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5]. "
             "After that, add which champion the player has selected using: user:championSelected. "
+            f"To find the ID of the items that you will have to use later on your response you must find it in that you can find here https://ddragon.leagueoflegends.com/cdn/{realVersion}/data/en_US/item.json"
 
             "Next, you MUST perform the following steps strictly in order: "
-            f"Step 1: Using the exact patch number {patchNumber}, use WEB SEARCH internally to find the best builds for the USER CHAMPION against enemy champions and synergies with ally champions for that current patch. Prioritize items strong against multiple enemies."
+            f"Step 1: Using the exact patch number {patchNumber}, use WEB SEARCH internally to find the best builds for the USER CHAMPION against enemy champions and synergies with ally champions for that current patch. Prioritize items strong against multiple enemies. You should never show search() or anythign to related. Only show what you found"
             "Then add the next lines to your response"  
-            "Line 3: list of items of the first build separated by commas "
+            "Line 3: list of items of the first build separated by commas, after every item type : and id of the item"
             "Line 4: short reasoning and approach for the first build"
-            "Line 5: list of items of the second build  separated by commas"
+            "Line 5: list of items of the second build  separated by commas, after every item type : and id of the item"
             "Line 6: short reasoning and approach for the second build"
             f"Line 7: The patch number used for this search."
 
             "The build must be written as a comma-separated list of exactly six items: item1,item2,item3,item4,item5,item6."
-            "You must always show these 7 lines of information and nothing else. Do not tell the user when you searched something."
+            "Remember you must always show these 7 lines of information and nothing else. Do not tell the user when you searched something. Do not add stuff to your response. Just those lines given the instructions"
         )
 
         response = client.responses.create(
@@ -158,7 +164,16 @@ def showImages(response):
             row = i // 5  # row 0 for first 5, row 1 for next 5
             col = i % 5   # column from 0 to 4
             label.grid(row=row, column=col, padx=5, pady=5)
+    items = info[3].split(",") # 4th line contains the items separated by commas
+    for i, item in enumerate(items):
+        image = getItemImage(item)  # get the item image
+        if image:
+            pic = ImageTk.PhotoImage(image)
+            label = tk.Label(frame, image=pic)
+            label.image = pic  # keep a reference to avoid garbage collection
+            label.grid(row=2, column=i, padx=5, pady=5)
 
+    frame.pack(padx=10, pady=10)  # place the frame
 
 def getChampionImage(championName):
     patchNumber = patchInput.get().strip() # get the patch number from the input
@@ -178,7 +193,23 @@ def getChampionImage(championName):
         return None # returns None if the request was not successful
         print(f"Champion image for {championName} not found.") # prints an error message if the champion image was not found
 
-
+def getItemImage(item):
+    patchNumber = patchInput.get().strip() # get the patch number from the input
+    firstNumber = int(patchNumber.split(".")[0]) # get the first number of the patch
+    realVersionFirstNumber = firstNumber - 10 # get the real version first number
+    realVersion = str(realVersionFirstNumber) + "." + patchNumber.split(".")[1] + ".1" # gets the real version of the patch
+    itemId = item.split(":")[1].strip()  # get the item ID from the item string
+    url = f"https://ddragon.leagueoflegends.com/cdn/{realVersion}/img/item/{itemId}.png" # URL to get the item image
+    response = requests.get(url) # makes a request to the URL
+    print(url,response.status_code)
+    if response.status_code == 200:
+        imageData = response.content # gets the content of the response
+        image = Image.open(io.BytesIO(imageData)) # opens the image
+        return image
+    
+    else:
+        return None # returns None if the request was not successful
+        print(f"Item image for {itemId} not found.") # prints an error message if the item image was not found
 # -------------- WINDOW --------------
 
 rootWindow = tk.Tk() # create main window of the app
@@ -212,7 +243,7 @@ changeFolderButton.pack(pady=10) # add change folder button to window
 folderTag.pack(pady=10) # add folder tag to window
 analyzeButton.pack(pady=10) # add analyze button to window
 patchInput.pack(pady=10) # add patch input to window
-frame.pack(padx=10, pady=10)  # place it
+
 
 
 # -------------- RUN --------------
