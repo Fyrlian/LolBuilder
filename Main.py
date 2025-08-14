@@ -12,6 +12,7 @@ import threading # imports the threading library to handle concurrent tasks
 from openai import OpenAI # imports the OpenAI library to use the API key
 import base64
 import io # imports the io library for handling byte data
+import json # imports json library to handle JSON files to find the id of each item
 
 # -------------- API KEY --------------
 
@@ -56,6 +57,18 @@ def scAndAnalyze():
         analyzingTag.pack() # shows the analyzing label
 
         return
+    
+    firstNumber = int(patchNumber.split(".")[0]) # get the first number of the patch
+    realVersionFirstNumber = firstNumber - 10 # get the real version first number
+    realVersion = str(realVersionFirstNumber) + "." + patchNumber.split(".")[1] + ".1" # gets the real version of the patch
+    
+    url = f"https://ddragon.leagueoflegends.com/cdn/{realVersion}/data/en_US/item.json" # URL to get the items
+
+    response = requests.get(url) # makes a request to the URL
+
+    global JSONResponse
+    JSONResponse = response.json() # gets the JSON response
+
     ScreenCapture(onComplete=analyzeScreenshot) # we use a callback to analyze the screenshot after capturing
 
 # allows selecting the folder to save images
@@ -105,7 +118,9 @@ def analyzeScreenshot():
             f"To find the ID of the items that you will have to use later on your response you must find it in that you can find here https://ddragon.leagueoflegends.com/cdn/{realVersion}/data/en_US/item.json"
 
             "Next, you MUST perform the following steps strictly in order: "
-            f"Step 1: Using the exact patch number {patchNumber}, use WEB SEARCH internally to find the best builds for the USER CHAMPION against enemy champions and synergies with ally champions for that current patch. Prioritize items strong against multiple enemies. You should never show search() or anythign to related. Only show what you found"
+            f"Step 1: Using the exact patch number {realVersion}, use WEB SEARCH to find the best builds for the USER CHAMPION against enemy champions and synergies with ally champions ON GIVEN PATCH {realVersion} . Prioritize items strong against multiple enemies. You should never show search() or anythign to related. Only show what you found"
+
+
             "Then add the next lines to your response"  
             "Line 3: list of items of the first build separated by commas, after every item type : and id of the item"
             "Line 4: short reasoning and approach for the first build"
@@ -146,6 +161,8 @@ def analyzeScreenshot():
 
         AIResponse = response.output_text
 
+        print(AIResponse) # prints the AI response to the console
+
         if AIResponse.strip() == "NO CHAMP SELECT": # if the AI response is NO CHAMP SELECT
             analyzingTag.config(text="No champion select detected.", fg="red")
             return
@@ -176,6 +193,15 @@ def showImages(response):
             label.grid(row=row+1, column=col, padx=5, pady=5)
     items = info[3].split(",") # 4th line contains the items separated by commas
     for i, item in enumerate(items):
+        image = getItemImage(item)  # get the item image
+        if image:
+            pic = ImageTk.PhotoImage(image)
+            label = tk.Label(frame, image=pic)
+            label.image = pic  # keep a reference to avoid garbage collection
+            label.grid(row=5, column=i, padx=5, pady=5)
+
+    items2 = info[5].split(",") # 4th line contains the items separated by commas
+    for i, item in enumerate(items2):
         image = getItemImage(item)  # get the item image
         if image:
             pic = ImageTk.PhotoImage(image)
@@ -214,8 +240,16 @@ def getItemImage(item):
     firstNumber = int(patchNumber.split(".")[0]) # get the first number of the patch
     realVersionFirstNumber = firstNumber - 10 # get the real version first number
     realVersion = str(realVersionFirstNumber) + "." + patchNumber.split(".")[1] + ".1" # gets the real version of the patch
-    itemId = item.split(":")[1].strip()  # get the item ID from the item string
-    url = f"https://ddragon.leagueoflegends.com/cdn/{realVersion}/img/item/{itemId}.png" # URL to get the item image
+
+    itemName = item.split(":")[0].strip() # get the item name from the response
+    imageId = None # variable to store the image ID
+
+    for itemId, itemDictionary in JSONResponse["data"].items(): # iterate through the items in the JSON response
+        if itemDictionary["name"].lower() == itemName.lower(): # check if the item name matches
+            imageId = itemDictionary["image"]["full"]
+            break
+
+    url = f"https://ddragon.leagueoflegends.com/cdn/{realVersion}/img/item/{imageId}" # URL to get the item image
     response = requests.get(url) # makes a request to the URL
     print(url,response.status_code)
     if response.status_code == 200:
