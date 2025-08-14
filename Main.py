@@ -116,15 +116,15 @@ def analyzeScreenshot():
             "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5]. "
             "After that, add which champion the player has selected using: user:championSelected. "
             f"To find the ID of the items that you will have to use later on your response you must find it in that you can find here https://ddragon.leagueoflegends.com/cdn/{realVersion}/data/en_US/item.json"
+            "You MUST ONLY USE THE ITEMS FROM THIS WEBSITE https://leagueofitems.com/items , if the item is not there DO NOT SUGGEST IT"
 
             "Next, you MUST perform the following steps strictly in order: "
-            f"Step 1: Using the exact patch number {realVersion}, use WEB SEARCH to find the best builds for the USER CHAMPION against enemy champions and synergies with ally champions ON GIVEN PATCH {realVersion} . Prioritize items strong against multiple enemies. You should never show search() or anythign to related. Only show what you found"
-
+            f"Step 1: Using the exact patch number {realVersion}, use WEB SEARCH to find the best builds for the USER CHAMPION against enemy champions and synergies with ally champions ON CURRENT PATCH. Prioritize items strong against multiple enemies. You should never show search() or anythign to related. Only show what you found"
 
             "Then add the next lines to your response"  
-            "Line 3: list of items of the first build separated by commas, after every item type : and id of the item"
+            "Line 3: list of items in https://leagueofitems.com/items of the first build separated by commas, after every item type : and id of the item"
             "Line 4: short reasoning and approach for the first build"
-            "Line 5: list of items of the second build  separated by commas, after every item type : and id of the item"
+            "Line 5: list of items in https://leagueofitems.com/items of the second build  separated by commas, after every item type : and id of the item"
             "Line 6: short reasoning and approach for the second build"
             f"Line 7: The patch number used for this search."
 
