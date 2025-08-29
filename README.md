@@ -8,7 +8,8 @@ AI powered app to find the perfect lol build for your game!
 2. Open the folder in Visual Studio Code or any other IDE. (Make sure you've got Python installed).
 3. Download needed libraries the app uses.
 4. Set your API KEY as an enviroment var typing -> setx OPENAI_API_KEY "api key". OR you can change the  line 18 in the main file to directly use your api key. Such as: apiKey = "your api key".
-5. Run the code.
+5. Restart your code
+6. Run the code.
 
 # FUTURE UPDATES
 
@@ -17,6 +18,7 @@ AI powered app to find the perfect lol build for your game!
 - Allow the user to choose the number of builds to show.
 - Improving the build selection to be more accurate to the game (more odds of winning).
 - Overall improvements and bug fixing.
+- Guide pannels
 
 
 
