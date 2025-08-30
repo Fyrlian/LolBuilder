@@ -77,9 +77,11 @@ def scAndAnalyze():
     rankedItems = []
     
     for itemId, itemDictionary in JSONResponse["data"].items(): # iterate through the items in the JSON response
-        if itemDictionary.get("maps", {}).get("11", False):
+        if itemDictionary.get("maps", {}).get("11", False): # only completed items (items that dont have "into" class and that has map 11 as true)
             rankedItems.append(itemDictionary["name"])
 
+
+    print(rankedItems)
 
     ScreenCapture(onComplete=analyzeScreenshot) # we use a callback to analyze the screenshot after capturing
 
@@ -128,7 +130,8 @@ def analyzeScreenshot():
             "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5]. "
             "After that, add which champion the player has selected using: user:championSelected. "
             f"To find the ID of the items that you will have to use later on your response you must find it in that you can find here https://ddragon.leagueoflegends.com/cdn/{realVersion}/data/en_US/item.json"
-            f"You MUST ONLY USE THE ITEMS FROM THIS LIST {rankedItems}, if the item is not there DO NOT SUGGEST IT"
+            f"You MUST ONLY USE THE ITEMS FROM THIS LIST {rankedItems}, if the item is not there DO NOT SUGGEST IT."
+            "The items should be final items, do not suggest components or starter items."
 
             "Next, you MUST perform the following steps strictly in order: "
             f"Step 1: Using the exact patch number {realVersion}, use WEB SEARCH to find the best builds for the USER CHAMPION against enemy champions and synergies with ally champions ON CURRENT PATCH. Prioritize items strong against multiple enemies. You should never show search() or anythign to related. Only show what you found"
@@ -138,10 +141,9 @@ def analyzeScreenshot():
             "Line 4: short reasoning and approach for the first build"
             f"Line 5: list of items of the second build  separated by commas (MUST BE FROM THIS LIST {rankedItems})"
             "Line 6: short reasoning and approach for the second build"
-            f"Line 7: The patch number used for this search."
+            f"Line 7: The patch number used for this search.\n"
 
-            "The build must be written as a comma-separated list of exactly six items: item1,item2,item3,item4,item5,item6."
-            "Remember you must always show these 7 lines of information and nothing else. Do not tell the user when you searched something. Do not add stuff to your response. Just those lines given the instructions"
+            "Remember you MUST ALWAYS show these 7 lines of information and nothing else. NEVER tell the user when you searched something. Do not add stuff to your response. Just those lines given the instructions. NEVER show Search() or anything related. ONLY the response following the structure given before."
         )
 
         # Send the request to the API
