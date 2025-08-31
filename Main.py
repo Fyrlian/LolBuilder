@@ -15,8 +15,8 @@ import io # imports the io library for handling byte data
 import json # imports json library to handle JSON files to find the id of each item
 
 #TO DO
-# Get the items from ddragon and give it to the AI from ranked queues only
 # Make installer
+# Add config for the api key
 
 # -------------- API KEY --------------
 
@@ -123,27 +123,26 @@ def analyzeScreenshot():
             "Analyze the following screenshot. It might show a League of Legends champion select screen or something else. "
             "If the screenshot does NOT show a champion select screen, respond exactly with: NO CHAMP SELECT. "
             "If the screenshot DOES show a champion select screen, respond ONLY with a comma-separated list of champions. "
-            "- If you see both teams, list them in this exact order: "
+            "- If you see both teams, list them in this exact order:\n"
             "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5],"
-            "[enemyChampion1],[enemyChampion2],[enemyChampion3],[enemyChampion4],[enemyChampion5]. "
-            "- If you see ONLY the allied team, list only these champions as: "
-            "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5]. "
-            "After that, add which champion the player has selected using: user:championSelected. "
-            f"To find the ID of the items that you will have to use later on your response you must find it in that you can find here https://ddragon.leagueoflegends.com/cdn/{realVersion}/data/en_US/item.json"
-            f"You MUST ONLY USE THE ITEMS FROM THIS LIST {rankedItems}, if the item is not there DO NOT SUGGEST IT."
-            "The items should be final items, do not suggest components or starter items."
+            "[enemyChampion1],[enemyChampion2],[enemyChampion3],[enemyChampion4],[enemyChampion5].\n"
+            "- If you see ONLY the allied team, list only these champions as:\n"
+            "[allyChampion1],[allyChampion2],[allyChampion3],[allyChampion4],[allyChampion5].\n"
+            "After that, add which champion the player has selected using: user:championSelected.\n"
+            f"You MUST ONLY SUUGEST THE ITEMS FROM THIS LIST {rankedItems}, if the item is not there DO NOT SUGGEST IT."
+            "The items should be final items, NEVER suggest components or starter items.\n"
 
             "Next, you MUST perform the following steps strictly in order: "
-            f"Step 1: Using the exact patch number {realVersion}, use WEB SEARCH to find the best builds for the USER CHAMPION against enemy champions and synergies with ally champions ON CURRENT PATCH. Prioritize items strong against multiple enemies. You should never show search() or anythign to related. Only show what you found"
+            f"Step 1: Using the exact patch number {realVersion}, use WEB SEARCH to find the best builds for the USER CHAMPION against enemy champions and synergies with ally champions ON CURRENT PATCH. Prioritize items strong against multiple enemies. You should never show search() or anythign to related. Only show what you found\n"
 
-            "Then add the next lines to your response"  
-            f"Line 3: list of items of the first build separated by commas (MUST BE FROM THIS LIST {rankedItems})"
-            "Line 4: short reasoning and approach for the first build"
-            f"Line 5: list of items of the second build  separated by commas (MUST BE FROM THIS LIST {rankedItems})"
-            "Line 6: short reasoning and approach for the second build"
+            "Then add the next lines to your response\n"  
+            f"Line 3: list of items of the first build separated by commas (THE ITEMS MUST BE FROM THIS LIST {rankedItems}\n"
+            "Line 4: short reasoning and approach for the first build\n"
+            f"Line 5: list of items of the second build  separated by commas (THE ITEMS MUST BE FROM THIS LIST {rankedItems}\n"
+            "Line 6: short reasoning and approach for the second build\n"
             f"Line 7: The patch number used for this search.\n"
 
-            "Remember you MUST ALWAYS show these 7 lines of information and nothing else. NEVER tell the user when you searched something. Do not add stuff to your response. Just those lines given the instructions. NEVER show Search() or anything related. ONLY the response following the structure given before."
+            "Remember you MUST ALWAYS show these 7 lines of information and nothing else. NEVER tell the user when you searched something. Do not add stuff to your response. Just those lines given the instructions. NEVER show Search() or searching anything related to your search, use the info for your reasoning. ONLY the response following the structure given before."
         )
 
         # Send the request to the API
@@ -208,7 +207,7 @@ def showImages(response):
             if row == 1: # making space here for enemy tag
                 row = 2
             label.grid(row=row+1, column=col, padx=5, pady=5)
-    items = info[3].split(",") # 4th line contains the items separated by commas
+    items = info[2].split(",") # 3th line contains the items separated by commas
     for i, item in enumerate(items):
         image = getItemImage(item)  # get the item image
         if image:
@@ -217,14 +216,14 @@ def showImages(response):
             label.image = pic  # keep a reference to avoid garbage collection
             label.grid(row=5, column=i, padx=5, pady=5)
 
-    items2 = info[5].split(",") # 4th line contains the items separated by commas
+    items2 = info[4].split(",") # 5th line contains the second items separated by commas
     for i, item in enumerate(items2):
         image = getItemImage(item)  # get the item image
         if image:
             pic = ImageTk.PhotoImage(image)
             label = tk.Label(frame, image=pic)
             label.image = pic  # keep a reference to avoid garbage collection
-            label.grid(row=5, column=i, padx=5, pady=5)
+            label.grid(row=6, column=i, padx=5, pady=5)
 
     hideMainWindow()  # hide the main window components
     showTags()  # show the ally and enemy team labels
@@ -248,8 +247,8 @@ def getChampionImage(championName):
         return image
     
     else:
-        return None # returns None if the request was not successful
         print(f"Champion image for {championName} not found.") # prints an error message if the champion image was not found
+        return None # returns None if the request was not successful
 
 # gets the image of an item
 def getItemImage(item):
@@ -258,7 +257,7 @@ def getItemImage(item):
     realVersionFirstNumber = firstNumber - 10 # get the real version first number
     realVersion = str(realVersionFirstNumber) + "." + patchNumber.split(".")[1] + ".1" # gets the real version of the patch
 
-    itemName = item.split(":")[0].strip() # get the item name from the response
+    itemName = item.strip() # get the item name from the response
     imageId = None # variable to store the image ID
 
     for itemId, itemDictionary in JSONResponse["data"].items(): # iterate through the items in the JSON response
@@ -266,17 +265,19 @@ def getItemImage(item):
             imageId = itemDictionary["image"]["full"]
             break
 
+    print(f"Item - {item} | ID: {imageId}")
+
     url = f"https://ddragon.leagueoflegends.com/cdn/{realVersion}/img/item/{imageId}" # URL to get the item image
     response = requests.get(url) # makes a request to the URL
-    print(url,response.status_code)
+    print(url,", ",response.status_code)
     if response.status_code == 200:
         imageData = response.content # gets the content of the response
         image = Image.open(io.BytesIO(imageData)) # opens the image
         return image
     
     else:
+        print(f"Item image for {itemName} not found.") # prints an error message if the item image was not found
         return None # returns None if the request was not successful
-        print(f"Item image for {itemId} not found.") # prints an error message if the item image was not found
 
 # goes back to the main window hiding build and champion images
 def goBack():
