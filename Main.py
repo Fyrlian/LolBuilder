@@ -58,7 +58,7 @@ def scAndAnalyze():
 
     if not patchNumber: # if no patch number is entered
         analyzingTag.config(text="Please enter a patch number.",fg="red") # shows error if no patch number is entered
-        analyzingTag.pack() # shows the analyzing label
+        analyzingTag.grid(row=5, column=1, pady=10) # shows the analyzing label
 
         return
     
@@ -110,7 +110,7 @@ def analyzeScreenshot():
     def analyzeAI():
 
         analyzingTag.config(text="Analyzing...",fg = "black") # shows the analyzing label
-        analyzingTag.pack() # shows the analyzing label
+        analyzingTag.grid(row=5, column=1, pady=10) # shows the analyzing label
         
         base64Image = encodeImage(saveRoute) # encodes the screenshot to base64
 
@@ -311,6 +311,9 @@ def showTags():
     enemyTeamTag.config(fg="red")
     allyTeamTag.config(fg="blue")
 
+def config():
+    return
+
 # -------------- WINDOW --------------
 
 rootWindow = tk.Tk() # create main window of the app
@@ -331,20 +334,30 @@ changeFolderButton = tk.Button(rootWindow, text="Change Save Folder", command=se
 
 analyzingTag = tk.Label(rootWindow, text="Analyzing...") # label to show when analyzing
 
+configureButton = tk.Button(rootWindow, text="Config", command=config) # button to analyze text
+
 analyzingTag.pack_forget() # hide the analyzing label initially
 
 backButton = tk.Button(frame, text="Go back", command=goBack) # button to analyze text
+
 
 global patchInput
 patchInput = tk.Entry(rootWindow) # input field for the patch number
 
 # -------------- PLACING COMPONENTS --------------
 
-textTitle.grid(row=0, column=0, padx=5, pady=5, columnspan=2) # add title to window
-changeFolderButton.grid(row=1, column=0, padx=5, pady=5, columnspan=2) # add change folder button to window
-folderTag.grid(row=2, column=3, padx=0, pady=5, columnspan=2)  # add folder tag to window
-analyzeButton.grid(row=3, column=0, padx=5, pady=5, columnspan=2)  # add analyze button to window
-patchInput.grid(row=4, column=0, padx=5, pady=5, columnspan=2)  # add patch input to window
+# column weights to center content
+rootWindow.columnconfigure(0, weight=2)
+rootWindow.columnconfigure(1, weight=0)
+rootWindow.columnconfigure(2, weight=1)
+
+
+textTitle.grid(row=0, column=1, pady=10,) # add title to window
+changeFolderButton.grid(row=1, column=1, pady=10) # add change folder button to window
+folderTag.grid(row=2, column=1, pady=10)  # add folder tag to window
+analyzeButton.grid(row=3, column=1, pady=10)  # add analyze button to window
+patchInput.grid(row=4, column=1, pady=10)  # add patch input to window
+configureButton.grid(row=6, column=2, pady=10) # add configure button
 
 # -------------- RUN --------------
 
