@@ -340,11 +340,11 @@ patchInput = tk.Entry(rootWindow) # input field for the patch number
 
 # -------------- PLACING COMPONENTS --------------
 
-textTitle.pack(pady=20) # add title to window
-changeFolderButton.pack(pady=10) # add change folder button to window
-folderTag.pack(pady=10) # add folder tag to window
-analyzeButton.pack(pady=10) # add analyze button to window
-patchInput.pack(pady=10) # add patch input to window
+textTitle.grid(row=0, column=0, padx=5, pady=5, columnspan=2) # add title to window
+changeFolderButton.grid(row=1, column=0, padx=5, pady=5, columnspan=2) # add change folder button to window
+folderTag.grid(row=2, column=3, padx=0, pady=5, columnspan=2)  # add folder tag to window
+analyzeButton.grid(row=3, column=0, padx=5, pady=5, columnspan=2)  # add analyze button to window
+patchInput.grid(row=4, column=0, padx=5, pady=5, columnspan=2)  # add patch input to window
 
 # -------------- RUN --------------
 
