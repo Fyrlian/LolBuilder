@@ -17,6 +17,7 @@ import json # imports json library to handle JSON files to find the id of each i
 #TO DO
 # Make installer
 # Add config for the api key
+# make everything pretty!
 
 # -------------- API KEY --------------
 
@@ -185,7 +186,7 @@ def analyzeScreenshot():
 
         showImages(AIResponse)
         analyzingTag.config(text=AIResponse) # shows the analyzing label
-        analyzeButton.pack_forget() # hides the analyze button
+        analyzeButton.grid_forget() # hides the analyze button
 
     # start the analysis in the separate thread
     threading.Thread(target=analyzeAI).start() # starts the analysis in a separate thread
@@ -229,7 +230,7 @@ def showImages(response):
     showTags()  # show the ally and enemy team labels
     backButton.grid(row=6, column=0, padx=5, pady=5)  # add back button to window
     rootWindow.geometry("1000x600")  # set window size
-    frame.pack(padx=10, pady=10)  # place the frame
+    frame.grid(padx=10, pady=10)  # place the frame
 
 # gets the image of a champion
 def getChampionImage(championName):
@@ -282,20 +283,23 @@ def getItemImage(item):
 # goes back to the main window hiding build and champion images
 def goBack():
     rootWindow.geometry("400x280") # 600 pixels resolution
-    frame.pack_forget()
-    changeFolderButton.pack(pady=10) # add change folder button to window
-    folderTag.pack(pady=10) # add folder tag to window
-    analyzeButton.pack(pady=10) # add analyze button to window
-    patchInput.pack(pady=10) # add patch input to window
-    analyzingTag.pack_forget() # add analyzing label to window
+    frame.grid_forget()
+    changeFolderButton.grid(row=1, column=1, pady=10) # add change folder button to window
+    folderTag.grid(row=2, column=1, pady=10)  # add folder tag to window
+    analyzeButton.grid(row=3, column=1, pady=10)  # add analyze button to window
+    patchInput.grid(row=4, column=1, pady=10)  # add patch input to window
+    analyzingTag.grid_forget() # add analyzing label to window
+    configureButton.grid(row=6, column=2, pady=10) # add configure button
+
 
 # hides the main window components
 def hideMainWindow():
-    analyzeButton.pack_forget() # hides the analyze button
-    analyzingTag.pack_forget() # hides the analyzing label
-    changeFolderButton.pack_forget() # hides the change folder button
-    folderTag.pack_forget() # hides the folder tag
-    patchInput.pack_forget() # hides the patch input
+    analyzeButton.grid_forget() # hides the analyze button
+    analyzingTag.grid_forget() # hides the analyzing label
+    changeFolderButton.grid_forget() # hides the change folder button
+    folderTag.grid_forget() # hides the folder tag
+    patchInput.grid_forget() # hides the patch input
+    configureButton.grid_forget()
 
 # shows the tags for enemy and ally teams
 def showTags():
@@ -336,7 +340,7 @@ analyzingTag = tk.Label(rootWindow, text="Analyzing...") # label to show when an
 
 configureButton = tk.Button(rootWindow, text="Config", command=config) # button to analyze text
 
-analyzingTag.pack_forget() # hide the analyzing label initially
+analyzingTag.grid_forget() # hide the analyzing label initially
 
 backButton = tk.Button(frame, text="Go back", command=goBack) # button to analyze text
 
